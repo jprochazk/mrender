@@ -189,3 +189,13 @@ export class Matrix2 extends Array<number> {
 
     get [Symbol.toStringTag](): string { return this.constructor.name }
 }
+
+export function mat2(
+    m00 = 1, m01 = 0,
+    m10 = 0, m11 = 1
+): Matrix2 {
+    return new Matrix2(
+        m00, m01,
+        m10, m11
+    );
+}

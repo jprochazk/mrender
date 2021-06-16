@@ -1,5 +1,5 @@
 import { EPSILON, fhypot } from "./common";
-import { m3, Matrix3 } from "./matrix3";
+import { mat3, Matrix3 } from "./matrix3";
 import { ReadonlyVector3, vec3, Vector3 } from "./vector3";
 
 export interface ReadonlyQuaternion extends ReadonlyArray<number> {
@@ -354,7 +354,7 @@ export class Quaternion extends Array<number> {
         }
     }
 
-    private static TM3 = m3();
+    private static TM3 = mat3();
     /**
      * Creates a quaternion with values corresponding to the given axes. 
      * Each axis is a vec3 and is expected to be unit length and

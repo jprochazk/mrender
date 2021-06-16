@@ -371,7 +371,7 @@ export class Matrix3 extends Array<number> {
     get [Symbol.toStringTag](): string { return this.constructor.name }
 }
 
-export function m3(
+export function mat3(
     m00 = 1, m01 = 0, m02 = 0,
     m10 = 0, m11 = 1, m12 = 0,
     m20 = 0, m21 = 0, m22 = 1,

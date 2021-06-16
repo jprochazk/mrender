@@ -399,15 +399,16 @@ export class Vector4 extends Array<number> {
     }
 
     /**
-     * Converts a hex string in the format `0xRRGGBBAA` or `RRGGBBAA` to a vector
+     * Converts a hex string in the format `0xRRGGBBAA` or `RRGGBBAA` to a vector,
+     * where each component will have a resulting value between 0 and 1.
      */
     static fromHex(hex: string): Vector4 {
         if (hex.startsWith("0x")) hex = hex.substring(2);
         return new Vector4(
-            Number(`0x${hex.substring(0, 2)}`),
-            Number(`0x${hex.substring(2, 4)}`),
-            Number(`0x${hex.substring(4, 6)}`),
-            Number(`0x${hex.substring(6, 8)}`)
+            Number(`0x${hex.substring(0, 2)}`) / 255,
+            Number(`0x${hex.substring(2, 4)}`) / 255,
+            Number(`0x${hex.substring(4, 6)}`) / 255,
+            Number(`0x${hex.substring(6, 8)}`) / 255
         );
     }
     /**
