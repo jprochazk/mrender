@@ -1,0 +1,17 @@
+{
+    "name": "example",
+    "version": "1.0.0",
+    "author": "Jan Procházka",
+    "license": "MIT",
+    "scripts": {
+        "build": "snowpack build",
+        "dev": "snowpack dev",
+        "test": "jest"
+    },
+    "dependencies": {
+        "@snowpack/plugin-typescript": "^1.2.1",
+        "snowpack": "^3.0.13",
+        "typescript": "4.3.2",
+        "uloop": "^0.2.1"
+    }
+}

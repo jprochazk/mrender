@@ -1,4 +1,3 @@
 
-export function greet(who: string) {
-    return `Hello, ${who}!`;
-}
+export * as Math from "./math";
+export * as GL from "./gl";

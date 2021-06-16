@@ -1,0 +1,25 @@
+{
+    "compilerOptions": {
+        "target": "es2020",
+        "module": "commonjs",
+        "moduleResolution": "node",
+        "lib": ["ESNext", "DOM"],
+        "strict": true,
+        "alwaysStrict": true,
+        "sourceMap": true,
+        "jsx": "react", 
+        "jsxFactory": "h",
+        "outDir": "dist",
+        "baseUrl": ".",
+        "esModuleInterop": true,
+        "experimentalDecorators": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "declaration": true,
+        "declarationDir": "./dist",
+        "noImplicitAny": true /* Raise error on expressions and declarations with an implied 'any' type. */,
+        "downlevelIteration": true,
+    },
+    "include": ["src"],
+    "exclude": ["node_modules"]
+}
