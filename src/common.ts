@@ -21,6 +21,7 @@ const InvalidUsage = function () {
 const InvalidUsageDescriptor = { get: InvalidUsage, set: InvalidUsage };
 const DescriptorCache = {} as Record<any, any>;
 function invalidate(obj: any) {
+    // TODO: @DEBUG store call stack at this point
     const tag = Object.getPrototypeOf(obj);
     let descriptor = DescriptorCache[tag];
     if (!descriptor) {

@@ -1,7 +1,7 @@
 import { enumerable, Resource } from "../common";
 import { WEBGL } from "./const";
 
-export type BufferType =
+export type TypedArray =
     | Uint8Array
     | Uint16Array
     | Uint32Array
@@ -51,15 +51,16 @@ export enum BufferTarget {
     PixelUnpack = WEBGL.PIXEL_UNPACK_BUFFER,
 }
 
-export class Buffer<Type extends BufferType> extends Resource {
+export class Buffer<Type extends TypedArray> extends Resource {
     private previousTarget: GLenum;
     public readonly handle: WebGLBuffer;
     constructor(
+        public readonly id: number,
         public readonly gl: WebGL2RenderingContext,
         public readonly inner: Type,
         upload = false,
-        public target = gl.ARRAY_BUFFER,
-        public usage = BufferUsage.Static,
+        public target: BufferTarget = BufferTarget.Vertex,
+        public usage: BufferUsage = BufferUsage.Static,
     ) {
         super();
         const handle = gl.createBuffer();

@@ -10,12 +10,14 @@ export class Shader extends Resource {
     private program: WebGLProgram;
     public readonly info: Readonly<Record<string, UniformInfo>>;
 
-    public uniforms: Record<string, number | number[]>;
-    private uniformData: Record<string, number | number[]>;
+    public autoUpdateUniforms = true;
+    public uniforms: Record<string, any>;
+    private uniformData: Record<string, any>;
     private uniformKeys: string[];
 
     constructor(
-        private gl: WebGL2RenderingContext,
+        public readonly id: number,
+        public readonly gl: WebGL2RenderingContext,
         public source: ShaderSource
     ) {
         super();
@@ -27,8 +29,13 @@ export class Shader extends Resource {
         this.uniformKeys = Object.keys(this.info);
         for (const name of this.uniformKeys) {
             Object.defineProperty(this.uniforms, name, {
-                get: () => { this.uniformData[name]; },
-                set: (value) => { this.uniformData[name] = value; }
+                get: () => { return this.uniformData[name]; },
+                set: (value) => {
+                    this.uniformData[name] = value;
+                    if (this.autoUpdateUniforms) {
+                        this.info[name].setter(value);
+                    }
+                }
             });
         }
     }
@@ -37,11 +44,9 @@ export class Shader extends Resource {
      * Uploads uniform data to the GPU
      */
     @enumerable
-    uploadUniforms() {
+    updateUniforms() {
         for (let i = 0, len = this.uniformKeys.length; i < len; ++i) {
             const key = this.uniformKeys[i];
-            console.log(this.info[key].setter);
-            console.log(this.uniformData[key]);
             this.info[key].setter(this.uniformData[key])
         }
     }
@@ -67,7 +72,7 @@ function createUniformSetter(
     gl: WebGL2RenderingContext,
     type: number,
     location: WebGLUniformLocation
-): (data: number | number[]) => void {
+): (data: any) => void {
     let desc: "scalar" | "array" | "matrix";
     let size: number;
     let name: string;
@@ -190,7 +195,7 @@ export namespace Uniform {
 
 type UniformInfo = WebGLActiveInfo & {
     location: WebGLUniformLocation,
-    setter(data: number | number[]): void
+    setter(data: any): void
 };
 
 function reflectUniforms(

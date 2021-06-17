@@ -1,8 +1,11 @@
 import { vec4, Vector4 } from "../math";
-import { Buffer, BufferType } from "./buffer";
+import { AttributeArrayBuilder } from "./attribArray";
+import { Buffer, TypedArray } from "./buffer";
 import { Shader, ShaderSource } from "./shader";
 
 export class Context {
+    private guidSequence: number = 0;
+
     private canvas: HTMLCanvasElement;
     private context: WebGL2RenderingContext;
     constructor() {
@@ -18,6 +21,8 @@ export class Context {
     }
 
     get gl() { return this.context }
+
+    nextGUID() { return this.guidSequence++ }
 
     private _background = vec4(1, 1, 1, 1);
     get background(): Vector4 { return this._background }
@@ -68,7 +73,7 @@ export class Context {
      * source strings.
      */
     createShader(source: ShaderSource): Shader {
-        return new Shader(this.gl, source);
+        return new Shader(this.guidSequence++, this.gl, source);
     }
 
     /**
@@ -79,15 +84,25 @@ export class Context {
      * If `upload` is `true`, also immediately uploads it to the GPU.
      * 
      * @param upload default: `false`
-     * @param slot default: `ARRAY_BUFFER`
+     * @param target default: `ARRAY_BUFFER`
      * @param usage default: `STATIC_DRAW`
      */
-    createBuffer<Type extends BufferType>(
+    createBuffer<Type extends TypedArray>(
         inner: Type,
         upload = false,
-        slot = this.gl.ARRAY_BUFFER,
+        target = this.gl.ARRAY_BUFFER,
         usage = this.gl.STATIC_DRAW
     ): Buffer<Type> {
-        return new Buffer(this.gl, inner, upload, slot, usage);
+        return new Buffer(this.guidSequence++, this.gl, inner, upload, target, usage);
+    }
+
+    /**
+     * Creates a new attribute array builder.
+     * 
+     * Attribute arrays are vertex arrays, but they also handle
+     * index buffers.
+     */
+    createAttribArray(): AttributeArrayBuilder {
+        return new AttributeArrayBuilder(this.guidSequence++, this.gl);
     }
 }
