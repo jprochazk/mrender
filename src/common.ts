@@ -3,7 +3,10 @@ export type Constructor<T> = {
     new(...args: any[]): T;
 }
 
-export function deepError(depth: number, message: string) {
+/**
+ * Creates an error with the stack trimmed up to a specific depth (default 1)
+ */
+export function deepError(message: string, depth = 1) {
     const error = new Error(message);
     if (error.stack === undefined) {
         return error;
@@ -14,35 +17,26 @@ export function deepError(depth: number, message: string) {
     return error;
 }
 
-// TODO: @DEBUG only do this in debug mode (?)
-const InvalidUsage = function () {
-    throw deepError(1, "Attempted to use a resource after .free()");
+export function UseAfterFree(): any {
+    throw deepError("Attempted to use freed resource");
 }
-const InvalidUsageDescriptor = { get: InvalidUsage, set: InvalidUsage };
-const DescriptorCache = {} as Record<any, any>;
-function invalidate(obj: any) {
-    // TODO: @DEBUG store call stack at this point
-    const tag = Object.getPrototypeOf(obj);
-    let descriptor = DescriptorCache[tag];
-    if (!descriptor) {
-        descriptor = {} as Record<string, any>;
-        for (const key in obj) {
-            descriptor[key] = InvalidUsageDescriptor;
-        }
-        DescriptorCache[tag] = descriptor;
+
+export function flatten(data: any, depth = 1, out: any[] = []): any[] {
+    if (depth <= -1 || !Array.isArray(data)) {
+        out.push(data);
+        return out;
     }
-    Object.defineProperties(obj, descriptor);
+    for (let i = 0; i < data.length; ++i) {
+        flatten(data[i], depth - 1, out);
+    }
+    return out;
 }
 
 /**
- * Marks a resource as `freeable`. The overriden `free` method
- * should *always* call `super.free()`. All methods on the child
- * class should be marked with `@enumerable`.
+ * Free-able resource
  */
-export abstract class Resource {
-    free(): void {
-        invalidate(this);
-    }
+export interface Resource {
+    free(): void;
 }
 
 export function enumerable(target: any, propertyKey: string, descriptor: PropertyDescriptor) {

@@ -1,4 +1,4 @@
-import { enumerable, Resource } from "../common";
+import { enumerable, Resource, UseAfterFree } from "../common";
 import { WEBGL } from "./const";
 
 export interface ShaderSource {
@@ -6,7 +6,7 @@ export interface ShaderSource {
     fragment: string,
 }
 
-export class Shader extends Resource {
+export class Shader implements Resource {
     private program: WebGLProgram;
     public readonly info: Readonly<Record<string, UniformInfo>>;
 
@@ -20,7 +20,6 @@ export class Shader extends Resource {
         public readonly gl: WebGL2RenderingContext,
         public source: ShaderSource
     ) {
-        super();
         this.program = compile(this.gl, source);
         this.info = reflectUniforms(this.gl, this.program);
 
@@ -43,7 +42,6 @@ export class Shader extends Resource {
     /**
      * Uploads uniform data to the GPU
      */
-    @enumerable
     updateUniforms() {
         for (let i = 0, len = this.uniformKeys.length; i < len; ++i) {
             const key = this.uniformKeys[i];
@@ -51,20 +49,21 @@ export class Shader extends Resource {
         }
     }
 
-    @enumerable
     bind() {
         this.gl.useProgram(this.program);
     }
 
-    @enumerable
     unbind() {
         this.gl.useProgram(null);
     }
 
-    @enumerable
     free() {
         this.gl.deleteProgram(this.program);
-        super.free();
+        this.free = UseAfterFree;
+        this.bind = UseAfterFree;
+        this.unbind = UseAfterFree;
+        this.updateUniforms = UseAfterFree;
+        this.uniforms = new Proxy({}, { get: UseAfterFree, set: UseAfterFree as any });
     }
 }
 

@@ -1,9 +1,10 @@
+import { Resource, UseAfterFree } from "../common";
 import { Attribute } from "./attribute"
-import { Buffer, BufferTarget, TypedArray } from "./buffer";
+import { Buffer, Target, TypedArray } from "./buffer";
 
 // TODO: @Feature instanced attributes
 
-export class AttributeArray {
+export class AttributeArray implements Resource {
     public readonly handle: WebGLVertexArrayObject;
     constructor(
         public readonly id: number,
@@ -22,7 +23,7 @@ export class AttributeArray {
             attributes[i].bind();
         }
         if (indexBuffer) {
-            indexBuffer.target = BufferTarget.Index;
+            indexBuffer.target = Target.Index;
             indexBuffer.bind();
         }
         this.gl.bindVertexArray(null);
@@ -34,6 +35,13 @@ export class AttributeArray {
 
     unbind() {
         this.gl.bindVertexArray(null);
+    }
+
+    free() {
+        this.gl.deleteVertexArray(this.handle);
+        this.free = UseAfterFree;
+        this.bind = UseAfterFree;
+        this.unbind = UseAfterFree;
     }
 }
 
@@ -49,7 +57,6 @@ export class AttributeArrayBuilder {
     ) { }
 
     build(): AttributeArray {
-        console.log(this);
         for (const info of Object.values(this.offsets)) {
             for (let i = 0, len = info.attributes.length; i < len; ++i) {
                 info.attributes[i].stride = info.offset;
@@ -58,7 +65,25 @@ export class AttributeArrayBuilder {
         return new AttributeArray(this.id, this.gl, this.attributes, this.indexBuffer);
     }
 
-    private add(
+    /**
+     * Add a single attribute.
+     * 
+     * Users should prefer the specific attribute builder methods (e.g. `.vec4()` or `.mat4()`),
+     * as they are much easier to use.
+     * 
+     * @param buffer Buffer which this attribute targets. Multiple attributes may target the same buffer
+     * @param components The number of components this attribute has, e.g. `vec2` has 2 components
+     * @param location The attribute index, this is the `location` in `layout(location = 0) in vec4`
+     * @param normalized Maps data to the range <0, 1>
+     * @param castToFloat Whether the data in the buffer should be cast to floating point
+     * 
+     * Notes:
+     * * Matrix attributes actually span more than one location, which means e.g. a `mat4` attribute is actually
+     * made up of 4 `vec4` attributes, and each one needs to be setup individually.
+     * * Normalization depends on the buffer data type, e.g. it would map a `Int16Array` by converting `-32767`
+     * to `0` and `32767` to 1, while linearly interpolating the rest of the range.
+     */
+    add(
         buffer: Buffer<TypedArray>,
         components: number,
         location: number,

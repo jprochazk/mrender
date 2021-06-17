@@ -1,7 +1,7 @@
 
 import { loop } from "uloop";
-import { Attribute, AttributeArray, BufferTarget, WEBGL } from "../../src/gl";
-import { GL, mat4, vec4, Vector4 } from "../../src/index";
+import { Target, WEBGL } from "../../src/gl";
+import { GL, Vector4 } from "../../src/index";
 
 const ctx = new GL.Context();
 ctx.appendTo(document.getElementById("root")!);
@@ -51,7 +51,7 @@ const colorBuffer = ctx.createBuffer(new Float32Array([
 ]), true);
 const indexBuffer = ctx.createBuffer(new Uint16Array([
     0, 1, 2, 2, 3, 0
-]), true, BufferTarget.Index);
+]), true, Target.Index);
 const vao = ctx.createAttribArray()
     .vec2(positionBuffer)
     .vec4(colorBuffer)

@@ -1,4 +1,4 @@
-import { enumerable, Resource } from "../common";
+import { Resource, UseAfterFree } from "../common";
 import { WEBGL } from "./const";
 
 export type TypedArray =
@@ -11,47 +11,39 @@ export type TypedArray =
     | Float32Array
     ;
 
-export enum BufferUsage {
-    Static = WEBGL.STATIC_DRAW,
-    Dynamic = WEBGL.DYNAMIC_DRAW
+/**
+ * Usage hint
+ */
+export namespace Usage {
+    /** `STATIC_DRAW` */
+    export const Static = WEBGL.STATIC_DRAW;
+    /** `DYNAMIC_DRAW` */
+    export const Dynamic = WEBGL.DYNAMIC_DRAW;
 }
 
-export enum BufferTarget {
-    /**
-     * `ARRAY_BUFFER`
-     */
-    Vertex = WEBGL.ARRAY_BUFFER,
-    /**
-     * `ELEMENT_ARRAY_BUFFER`
-     */
-    Index = WEBGL.ELEMENT_ARRAY_BUFFER,
-    /**
-     * `COPY_READ_BUFFER`
-     */
-    Source = WEBGL.COPY_READ_BUFFER,
-    /**
-     * `COPY_WRITE_BUFFER`
-     */
-    Destination = WEBGL.COPY_WRITE_BUFFER,
-    /**
-     * `TRANSFORM_FEEDBACK_BUFFER`
-     */
-    TransformFeedback = WEBGL.TRANSFORM_FEEDBACK_BUFFER,
-    /**
-     * `UNIFORM_BUFFER`
-     */
-    Uniform = WEBGL.UNIFORM_BUFFER,
-    /**
-     * `PIXEL_PACK_BUFFER`
-     */
-    PixelPack = WEBGL.PIXEL_PACK_BUFFER,
-    /**
-     * `PIXEL_UNPACK_BUFFER`
-     */
-    PixelUnpack = WEBGL.PIXEL_UNPACK_BUFFER,
+/**
+ * Buffer bind target
+ */
+export namespace Target {
+    /** `ARRAY_BUFFER` */
+    export const Vertex = WEBGL.ARRAY_BUFFER;
+    /** `ELEMENT_ARRAY_BUFFER` */
+    export const Index = WEBGL.ELEMENT_ARRAY_BUFFER;
+    /** `COPY_READ_BUFFER` */
+    export const IndexSource = WEBGL.COPY_READ_BUFFER;
+    /** `COPY_WRITE_BUFFER` */
+    export const IndexDestination = WEBGL.COPY_WRITE_BUFFER;
+    /** `TRANSFORM_FEEDBACK_BUFFER` */
+    export const IndexTransformFeedback = WEBGL.TRANSFORM_FEEDBACK_BUFFER;
+    /** `UNIFORM_BUFFER` */
+    export const IndexUniform = WEBGL.UNIFORM_BUFFER;
+    /** `PIXEL_PACK_BUFFER` */
+    export const IndexPixelPack = WEBGL.PIXEL_PACK_BUFFER;
+    /** `PIXEL_UNPACK_BUFFER` */
+    export const IndexPixelUnpack = WEBGL.PIXEL_UNPACK_BUFFER;
 }
 
-export class Buffer<Type extends TypedArray> extends Resource {
+export class Buffer<Type extends TypedArray> implements Resource {
     private previousTarget: GLenum;
     public readonly handle: WebGLBuffer;
     constructor(
@@ -59,10 +51,9 @@ export class Buffer<Type extends TypedArray> extends Resource {
         public readonly gl: WebGL2RenderingContext,
         public readonly inner: Type,
         upload = false,
-        public target: BufferTarget = BufferTarget.Vertex,
-        public usage: BufferUsage = BufferUsage.Static,
+        public target = Target.Vertex,
+        public usage = Usage.Static,
     ) {
-        super();
         const handle = gl.createBuffer();
         if (!handle) throw new Error(`Failed to create buffer`);
         this.handle = handle;
@@ -88,7 +79,6 @@ export class Buffer<Type extends TypedArray> extends Resource {
      * And only remove either the bind or unbind call if you are completely
      * sure that it won't break anything.
      */
-    @enumerable
     upload(): this {
         this.gl.bufferData(this.gl.ARRAY_BUFFER, this.inner, this.gl.STATIC_DRAW);
         return this;
@@ -100,7 +90,6 @@ export class Buffer<Type extends TypedArray> extends Resource {
      * `this.target` is mutable, so change it if you want to bind to
      * a different target.
      */
-    @enumerable
     bind(): this {
         this.gl.bindBuffer(this.target, this.handle);
         this.previousTarget = this.target;
@@ -108,18 +97,19 @@ export class Buffer<Type extends TypedArray> extends Resource {
     }
 
     /**
-     * Unbinds the buffer from the target where it was previously bound.
+     * Unbinds the buffer from where it was previously bound.
      */
-    @enumerable
     unbind(): this {
         // TODO: @DEBUG check if we're unbinding *this* buffer
         this.gl.bindBuffer(this.previousTarget, null);
         return this;
     }
 
-    @enumerable
     free() {
         this.gl.deleteBuffer(this.handle);
-        super.free();
+        this.free = UseAfterFree;
+        this.bind = UseAfterFree;
+        this.unbind = UseAfterFree;
+        this.upload = UseAfterFree;
     }
 }
