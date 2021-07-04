@@ -1,4 +1,5 @@
 import { Resource, UseAfterFree } from "../common";
+import { typeinfo } from "./attribute";
 import { WEBGL } from "./const";
 
 export type TypedArray =
@@ -14,38 +15,39 @@ export type TypedArray =
 /**
  * Usage hint
  */
-export namespace Usage {
+export enum Usage {
     /** `STATIC_DRAW` */
-    export const Static = WEBGL.STATIC_DRAW;
-    /** `DYNAMIC_DRAW` */
-    export const Dynamic = WEBGL.DYNAMIC_DRAW;
+    Static = WEBGL.STATIC_DRAW,
+    /** `DYNAMIC_DRAW` / `STREAM_DRAW` */
+    Dynamic = WEBGL.DYNAMIC_DRAW,
 }
 
 /**
  * Buffer bind target
  */
-export namespace Target {
+export enum Target {
     /** `ARRAY_BUFFER` */
-    export const Vertex = WEBGL.ARRAY_BUFFER;
+    Vertex = WEBGL.ARRAY_BUFFER,
     /** `ELEMENT_ARRAY_BUFFER` */
-    export const Index = WEBGL.ELEMENT_ARRAY_BUFFER;
+    Index = WEBGL.ELEMENT_ARRAY_BUFFER,
     /** `COPY_READ_BUFFER` */
-    export const IndexSource = WEBGL.COPY_READ_BUFFER;
+    Source = WEBGL.COPY_READ_BUFFER,
     /** `COPY_WRITE_BUFFER` */
-    export const IndexDestination = WEBGL.COPY_WRITE_BUFFER;
+    Destination = WEBGL.COPY_WRITE_BUFFER,
     /** `TRANSFORM_FEEDBACK_BUFFER` */
-    export const IndexTransformFeedback = WEBGL.TRANSFORM_FEEDBACK_BUFFER;
+    TransformFeedback = WEBGL.TRANSFORM_FEEDBACK_BUFFER,
     /** `UNIFORM_BUFFER` */
-    export const IndexUniform = WEBGL.UNIFORM_BUFFER;
+    Uniform = WEBGL.UNIFORM_BUFFER,
     /** `PIXEL_PACK_BUFFER` */
-    export const IndexPixelPack = WEBGL.PIXEL_PACK_BUFFER;
+    PixelPack = WEBGL.PIXEL_PACK_BUFFER,
     /** `PIXEL_UNPACK_BUFFER` */
-    export const IndexPixelUnpack = WEBGL.PIXEL_UNPACK_BUFFER;
+    PixelUnpack = WEBGL.PIXEL_UNPACK_BUFFER,
 }
 
-export class Buffer<Type extends TypedArray> implements Resource {
+export class Buffer<Type extends TypedArray = TypedArray> implements Resource {
     private previousTarget: GLenum;
     public readonly handle: WebGLBuffer;
+    public readonly type: WEBGL;
     constructor(
         public readonly id: number,
         public readonly gl: WebGL2RenderingContext,
@@ -53,7 +55,10 @@ export class Buffer<Type extends TypedArray> implements Resource {
         upload = false,
         public target = Target.Vertex,
         public usage = Usage.Static,
+        type?: WEBGL,
     ) {
+        this.type = type ?? typeinfo(this.inner).type;
+
         const handle = gl.createBuffer();
         if (!handle) throw new Error(`Failed to create buffer`);
         this.handle = handle;
@@ -68,10 +73,12 @@ export class Buffer<Type extends TypedArray> implements Resource {
         }
     }
 
+    get length() { return this.inner.length; }
+
     /**
      * Upload the Buffer's data to the GPU.
      * 
-     * For performance reasons, this neither binds nor unbinds the usage.
+     * For performance reasons, this neither binds nor unbinds the target.
      * To be certain you're not doing anything wrong, use it like so:
      * ```ts
      * buffer.bind().upload().unbind();

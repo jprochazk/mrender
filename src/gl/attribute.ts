@@ -11,6 +11,8 @@ function floatAttrib(this: Attribute) {
         this.stride,
         this.offset
     );
+    if (this.divisor !== 0) this.gl.vertexAttribDivisor(this.location, this.divisor);
+    return this;
 }
 
 function intAttrib(this: Attribute) {
@@ -20,6 +22,8 @@ function intAttrib(this: Attribute) {
         this.type,
         this.stride,
         this.offset);
+    if (this.divisor !== 0) this.gl.vertexAttribDivisor(this.location, this.divisor);
+    return this;
 }
 
 /**
@@ -34,21 +38,23 @@ export class Attribute {
     public readonly components: number;
     public readonly byteLength: number;
     public readonly offset: number;
+    public readonly divisor: number;
     public readonly normalized: boolean;
     public stride: number;
 
-    public readonly bind: () => void;
+    public readonly bind: () => this;
 
     constructor(
         gl: WebGL2RenderingContext,
         buffer: Buffer<TypedArray>,
         location: number,
         components: number,
-        offset: number = 0,
-        normalized: boolean = false,
-        castToFloat: boolean = false,
+        offset: number,
+        divisor: number,
+        normalized: boolean,
+        castToFloat: boolean,
     ) {
-        const info = elementInfo(buffer.inner);
+        const info = typeinfo(buffer.inner);
 
         this.gl = gl;
         this.buffer = buffer;
@@ -58,12 +64,13 @@ export class Attribute {
         this.components = components;
         this.byteLength = this.components * this.elementSize;
         this.offset = offset;
+        this.divisor = divisor;
         this.normalized = normalized;
         this.stride = 0;
 
         this.bind = (info.isFloat || castToFloat)
-            ? floatAttrib.bind(this)
-            : intAttrib.bind(this);
+            ? floatAttrib.bind(this) as any
+            : intAttrib.bind(this) as any;
     }
 }
 
@@ -74,7 +81,7 @@ const Int8ElementInfo = { elementSize: 1, type: WEBGL.BYTE, isFloat: false };
 const Uint32ElementInfo = { elementSize: 4, type: WEBGL.UNSIGNED_INT, isFloat: false };
 const Uint16ElementInfo = { elementSize: 2, type: WEBGL.UNSIGNED_SHORT, isFloat: false };
 const Uint8ElementInfo = { elementSize: 1, type: WEBGL.UNSIGNED_BYTE, isFloat: false };
-function elementInfo(array: TypedArray) {
+export function typeinfo(array: TypedArray): Readonly<{ elementSize: number, type: number, isFloat: boolean }> {
     if (array instanceof Float32Array) return Float32ElementInfo;
     if (array instanceof Int32Array) return Int32ElementInfo;
     if (array instanceof Uint32Array) return Uint32ElementInfo;

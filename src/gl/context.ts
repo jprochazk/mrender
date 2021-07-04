@@ -1,11 +1,14 @@
 import { vec4, Vector4 } from "../math";
 import { AttributeArrayBuilder } from "./attribArray";
 import { Buffer, TypedArray } from "./buffer";
+import { WEBGL } from "./const";
 import { Shader, ShaderSource } from "./shader";
 
 export class Context {
-    private guidSequence: number = 0;
+    readonly width: number;
+    readonly height: number;
 
+    private guidSequence: number = 0;
     private canvas: HTMLCanvasElement;
     private context: WebGL2RenderingContext;
     constructor() {
@@ -14,6 +17,8 @@ export class Context {
         this.canvas = canvas;
         this.canvas.style.width = "100%";
         this.canvas.style.height = "100%";
+        this.width = this.canvas.width;
+        this.height = this.canvas.height;
 
         const context = this.canvas.getContext("webgl2");
         if (!context) throw new Error(`Failed to create WebGL2 context`);
@@ -65,6 +70,8 @@ export class Context {
             this.canvas.width = this.canvas.clientWidth;
             this.canvas.height = this.canvas.clientHeight;
             this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+            (this.width as number) = this.canvas.width;
+            (this.height as number) = this.canvas.height;
         }
     }
 
@@ -90,10 +97,11 @@ export class Context {
     createBuffer<Type extends TypedArray>(
         inner: Type,
         upload = false,
+        usage = this.gl.STATIC_DRAW,
         target = this.gl.ARRAY_BUFFER,
-        usage = this.gl.STATIC_DRAW
+        type?: WEBGL,
     ): Buffer<Type> {
-        return new Buffer(this.guidSequence++, this.gl, inner, upload, target, usage);
+        return new Buffer(this.guidSequence++, this.gl, inner, upload, target, usage, type);
     }
 
     /**
@@ -105,4 +113,53 @@ export class Context {
     createAttribArray(): AttributeArrayBuilder {
         return new AttributeArrayBuilder(this.guidSequence++, this.gl);
     }
+
+    draw(
+        vertices: number,
+        mode: WEBGL = WEBGL.TRIANGLES,
+        offset: number = 0,
+    ): this {
+        this.gl.drawArrays(mode, offset, vertices);
+        return this;
+    }
+
+    drawInstanced(
+        instances: number,
+        vertices: number,
+        mode: WEBGL = WEBGL.TRIANGLES,
+        offset: number = 0
+    ): this {
+        this.gl.drawArraysInstanced(mode, offset, vertices, instances);
+        return this;
+    }
+
+    drawIndexed(
+        indices: number,
+        type: WEBGL,
+        mode: WEBGL = WEBGL.TRIANGLES,
+        offset: number = 0
+    ): this {
+        this.gl.drawElements(mode, indices, type, offset);
+        return this;
+    }
+
+    drawIndexedInstanced(
+        instances: number,
+        indices: number,
+        type: WEBGL,
+        mode: WEBGL = WEBGL.TRIANGLES,
+        offset: number = 0
+    ): this {
+        this.gl.drawElementsInstanced(mode, indices, type, offset, instances);
+        return this;
+    }
+}
+
+function _draw(this: Context, count: number, mode: WEBGL, offset: number): Context {
+    this.gl.drawArrays(mode, offset, count);
+    return this;
+}
+_draw.indexed = function _drawIndexed(this: Context, count: number, type: WEBGL, mode: WEBGL, offset: number): Context {
+    this.gl.drawElements(mode, count, type, offset);
+    return this;
 }

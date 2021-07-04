@@ -29,12 +29,14 @@ export class AttributeArray implements Resource {
         this.gl.bindVertexArray(null);
     }
 
-    bind() {
+    bind(): this {
         this.gl.bindVertexArray(this.handle);
+        return this;
     }
 
-    unbind() {
+    unbind(): this {
         this.gl.bindVertexArray(null);
+        return this;
     }
 
     free() {
@@ -69,7 +71,7 @@ export class AttributeArrayBuilder {
      * Add a single attribute.
      * 
      * Users should prefer the specific attribute builder methods (e.g. `.vec4()` or `.mat4()`),
-     * as they are much easier to use.
+     * as they are harder to misuse.
      * 
      * @param buffer Buffer which this attribute targets. Multiple attributes may target the same buffer
      * @param components The number of components this attribute has, e.g. `vec2` has 2 components
@@ -87,9 +89,10 @@ export class AttributeArrayBuilder {
         buffer: Buffer<TypedArray>,
         components: number,
         location: number,
-        normalized: boolean = false,
-        castToFloat: boolean = false
-    ) {
+        divisor: number,
+        normalized: boolean,
+        castToFloat: boolean
+    ): this {
         this.offsets[buffer.id] ??= { offset: 0, attributes: [] };
         const info = this.offsets[buffer.id];
         const attribute = new Attribute(
@@ -98,12 +101,14 @@ export class AttributeArrayBuilder {
             location,
             components,
             info.offset,
+            divisor,
             normalized,
             castToFloat
         );
         info.offset += attribute.byteLength;
         info.attributes.push(attribute);
         this.attributes.push(attribute);
+        return this;
     }
 
     // TODO: somehow allow explicit indices
@@ -113,106 +118,106 @@ export class AttributeArrayBuilder {
         this.indexBuffer = buffer;
         return this;
     }
-    float(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, true);
+    float(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    vec2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
+    vec2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    vec3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
+    vec3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    vec4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
+    vec4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    int(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    int(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    ivec2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    ivec2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    ivec3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    ivec3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    ivec4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    ivec4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    uint(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    uint(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    uvec2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    uvec2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    uvec3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    uvec3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    uvec4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 1, this.indexSequence++, normalized, false);
+    uvec4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 1, this.indexSequence++, divisor, normalized, false);
         return this;
     }
-    mat2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
+    mat2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat2x3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
+    mat2x3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat2x4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
-        this.add(buffer, 2, this.indexSequence++, normalized, true);
+    mat2x4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 2, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat3x2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
+    mat3x2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
+    mat3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat3x4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
-        this.add(buffer, 3, this.indexSequence++, normalized, true);
+    mat3x4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 3, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat4x2(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
+    mat4x2(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat4x3(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
+    mat4x3(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
         return this;
     }
-    mat4(buffer: Buffer<TypedArray>, normalized: boolean = false): this {
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
-        this.add(buffer, 4, this.indexSequence++, normalized, true);
+    mat4(buffer: Buffer<TypedArray>, divisor: number = 0, normalized: boolean = false): this {
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
+        this.add(buffer, 4, this.indexSequence++, divisor, normalized, true);
         return this;
     }
 }

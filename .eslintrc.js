@@ -13,6 +13,7 @@ module.exports = {
         "@typescript-eslint/no-var-requires": "off",
         "@typescript-eslint/no-inferrable-types": "off",
         "@typescript-eslint/no-misused-new": "off",
+        "@typescript-eslint/no-this-alias": "off",
         "no-debugger": "off",
         "no-fallthrough": "off",
         "no-constant-condition": "off",

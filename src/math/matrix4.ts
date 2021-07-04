@@ -496,11 +496,14 @@ export class Matrix4 extends Array<number> {
         const lr = 1 / (left - right);
         const bt = 1 / (bottom - top);
         const nf = 1 / (near - far);
+        const tx = (left + right) * lr;
+        const ty = (top + bottom) * bt;
+        const tz = (far + near) * nf;
         return new Matrix4(
-            -2 * lr, 0, 0, 0,
+            2 * lr, 0, 0, 0,
             0, -2 * bt, 0, 0,
             0, 0, 2 * nf, 0,
-            (left + right) * lr, (top + bottom) * bt, (far + near) * nf, 1
+            tx, ty, tz, 1
         );
     }
 

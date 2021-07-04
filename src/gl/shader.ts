@@ -1,4 +1,4 @@
-import { enumerable, Resource, UseAfterFree } from "../common";
+import { Resource, UseAfterFree } from "../common";
 import { WEBGL } from "./const";
 
 export interface ShaderSource {
@@ -42,19 +42,22 @@ export class Shader implements Resource {
     /**
      * Uploads uniform data to the GPU
      */
-    updateUniforms() {
+    updateUniforms(): this {
         for (let i = 0, len = this.uniformKeys.length; i < len; ++i) {
             const key = this.uniformKeys[i];
             this.info[key].setter(this.uniformData[key])
         }
+        return this;
     }
 
-    bind() {
+    bind(): this {
         this.gl.useProgram(this.program);
+        return this;
     }
 
-    unbind() {
+    unbind(): this {
         this.gl.useProgram(null);
+        return this;
     }
 
     free() {
