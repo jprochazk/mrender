@@ -37,7 +37,7 @@ const shader = ctx.createShader({
 });
 shader.bind();
 
-const instances = 20;
+const instances = 50;
 
 const positionBuffer = ctx.createBuffer(new Float32Array([
     /* -0.5, -0.5, 0.0,
@@ -77,25 +77,32 @@ vao.bind();
 
 let time = 0;
 
+const camera = {
+    eye: vec3(0, 0, -1),
+    center: vec3(),
+    worldUp: Vector3.Y.clone()
+};
+
+const pos = vec3();
+const scale = vec3(10, 10, 1);
+const rot = quat();
+
 loop(60,
+    () => { },
     () => {
-        time += 0.025;
-    },
-    () => {
+        time += 0.005;
         ctx.resize();
         ctx.clear();
-        shader.uniforms.projection = Matrix4.orthographic(0, ctx.width, ctx.height, 0, -1, 1);
-        shader.uniforms.view = Matrix4.lookAt(vec3(0, 0, -1), vec3(), Vector3.Y);
+        Matrix4.orthographicB(shader.uniforms.projection, 0, 0, ctx.width, ctx.height, 0, -1, 1);
+        Matrix4.lookAtB(shader.uniforms.view, 0, camera.eye, camera.center, camera.worldUp);
+        shader.update();
 
         for (let i = 0; i < instances; ++i) {
-            const matrix = Matrix4.translatedScaledRotated(
-                vec3(50 * i + (ctx.width / 2 - (50 * instances / 2)), ctx.height / 2, 0),
-                vec3(100, 100, 1),
-                Quaternion.fromEuler(0, 0, time + time * i)
-            );
-            for (let j = 0; j < matrix.length; ++j) {
-                matrixBuffer.inner[i * 16 + j] = matrix[j];
-            }
+            pos[0] = 10 * i + (ctx.width / 2 - (10 * instances / 2));
+            pos[1] = ctx.height / 2;
+            pos[2] = 0;
+            Quaternion.fromEulerB(rot, 0, 0, 0, time + time * i);
+            Matrix4.translatedScaledRotatedB(matrixBuffer.inner, i * 16, pos, scale, rot);
         }
         matrixBuffer.upload();
         ctx.drawInstanced(instances, positionBuffer.length / 3);

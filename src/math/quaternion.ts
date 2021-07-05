@@ -1,4 +1,4 @@
-import { EPSILON, fhypot } from "./common";
+import { BufferLike, EPSILON, fhypot } from "./common";
 import { mat3, Matrix3 } from "./matrix3";
 import { ReadonlyVector3, vec3, Vector3 } from "./vector3";
 
@@ -21,12 +21,6 @@ export interface ReadonlyQuaternion extends ReadonlyArray<number> {
      * Squared length of `this`
      */
     len2(): number;
-    /**
-     * Sets `this` to represent the shortest rotation from `a` to `b`.
-     *
-     * Both vectors are assumed to be unit length.
-     */
-    rotationTo(a: ReadonlyVector3, b: ReadonlyVector3): this;
     /**
      * Comparison between components of `this` and `that` with a margin of `epsilon`.
      * 
@@ -446,6 +440,29 @@ export class Quaternion extends Array<number> {
         out[2] = cx * cy * sz - sx * sy * cz;
         out[3] = cx * cy * cz + sx * sy * sz;
         return out;
+    }
+
+    static fromEulerB(
+        buffer: BufferLike,
+        offset: number,
+        x: number,
+        y: number,
+        z: number
+    ) {
+        const htr = Quaternion.HALF_TO_RAD;
+        x *= htr;
+        y *= htr;
+        z *= htr;
+        const sx = Math.sin(x);
+        const cx = Math.cos(x);
+        const sy = Math.sin(y);
+        const cy = Math.cos(y);
+        const sz = Math.sin(z);
+        const cz = Math.cos(z);
+        buffer[offset + 0] = sx * cy * cz - cx * sy * sz;
+        buffer[offset + 1] = cx * sy * cz + sx * cy * sz;
+        buffer[offset + 2] = cx * cy * sz - sx * sy * cz;
+        buffer[offset + 3] = cx * cy * cz + sx * sy * sz;
     }
 
     get [Symbol.toStringTag](): string { return this.constructor.name }

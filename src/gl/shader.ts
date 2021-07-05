@@ -1,3 +1,4 @@
+import { mat2, mat3, mat4, vec2, vec3, vec4 } from "../math";
 import { Resource, UseAfterFree } from "../common";
 import { WEBGL } from "./const";
 
@@ -10,9 +11,7 @@ export class Shader implements Resource {
     private program: WebGLProgram;
     public readonly info: Readonly<Record<string, UniformInfo>>;
 
-    public autoUpdateUniforms = true;
-    public uniforms: Record<string, any>;
-    private uniformData: Record<string, any>;
+    public readonly uniforms: Record<string, any>;
     private uniformKeys: string[];
 
     constructor(
@@ -23,29 +22,21 @@ export class Shader implements Resource {
         this.program = compile(this.gl, source);
         this.info = reflectUniforms(this.gl, this.program);
 
-        this.uniforms = {};
-        this.uniformData = {};
         this.uniformKeys = Object.keys(this.info);
-        for (const name of this.uniformKeys) {
-            Object.defineProperty(this.uniforms, name, {
-                get: () => { return this.uniformData[name]; },
-                set: (value) => {
-                    this.uniformData[name] = value;
-                    if (this.autoUpdateUniforms) {
-                        this.info[name].setter(value);
-                    }
-                }
-            });
+        this.uniforms = {};
+
+        for (let i = 0, len = this.uniformKeys.length; i < len; ++i) {
+            this.uniforms[this.uniformKeys[i]] = Uniform.defaultValue(this.info[this.uniformKeys[i]].type);
         }
     }
 
     /**
      * Uploads uniform data to the GPU
      */
-    updateUniforms(): this {
+    update(): this {
         for (let i = 0, len = this.uniformKeys.length; i < len; ++i) {
             const key = this.uniformKeys[i];
-            this.info[key].setter(this.uniformData[key])
+            this.info[key].setter(this.uniforms[key])
         }
         return this;
     }
@@ -65,8 +56,8 @@ export class Shader implements Resource {
         this.free = UseAfterFree;
         this.bind = UseAfterFree;
         this.unbind = UseAfterFree;
-        this.updateUniforms = UseAfterFree;
-        this.uniforms = new Proxy({}, { get: UseAfterFree, set: UseAfterFree as any });
+        this.update = UseAfterFree;
+        (this.uniforms as any) = new Proxy({}, { get: UseAfterFree, set: UseAfterFree as any });
     }
 }
 
@@ -154,6 +145,45 @@ function createUniformSetter(
 }
 
 export namespace Uniform {
+    export function defaultValue(type: number): any {
+        switch (type) {
+            case 0x1400: return 0; // byte
+            case 0x1402: return 0; // short
+            case 0x1404: return 0; // int
+            case 0x8b56: return 0; // bool
+            case 0x8b5e: return 0; // 2d float sampler
+            case 0x8b5f: return 0; // 3d float sampler
+            case 0x8dc1: return 0; // 2d float sampler array
+            case 0x8dd2: return 0; // 2d unsigned int sampler
+            case 0x8b60: return 0; // cube sampler
+            case 0x1401: return 0; // unsigned byte
+            case 0x1403: return 0; // unsigned short
+            case 0x1405: return 0; // unsigned int
+            case 0x8b53: return vec2(); // int 2-component vector
+            case 0x8b54: return vec3(); // int 3-component vector
+            case 0x8b55: return vec4(); // int 4-component vector
+            case 0x8b57: return vec2(); // bool 2-component vector
+            case 0x8b58: return vec3(); // bool 3-component vector
+            case 0x8b59: return vec4(); // bool 4-component vector
+            case 0x1406: return 0; // float
+            case 0x8b50: return vec2(); // float 2-component vector
+            case 0x8b51: return vec3(); // float 3-component vector
+            case 0x8b52: return vec4(); // float 4-component vector
+            case 0x8dc6: return vec2(); // unsigned int 2-component vector
+            case 0x8dc7: return vec3(); // unsigned int 3-component vector
+            case 0x8dc8: return vec4(); // unsigned int 4-component vector
+            case 0x8b5a: return mat2(); // float 2x2 matrix
+            case 0x8b5b: return mat3(); // float 2x3 matrix
+            case 0x8b5c: return mat4(); // float 2x4 matrix
+            case 0x8b65: return [0, 0, 0, 0, 0, 0]; // float 3x3 matrix
+            case 0x8b66: return [0, 0, 0, 0, 0, 0, 0, 0]; // float 3x2 matrix
+            case 0x8b67: return [0, 0, 0, 0, 0, 0]; // float 3x4 matrix
+            case 0x8b68: return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // float 4x4 matrix
+            case 0x8b69: return [0, 0, 0, 0, 0, 0, 0, 0]; // float 4x2 matrix
+            case 0x8b6a: return [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]; // float 4x3 matrix
+            default: return 0;
+        }
+    }
     export function typeName(type: number): string {
         switch (type) {
             case 0x1400: return "byte";

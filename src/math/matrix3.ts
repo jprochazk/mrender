@@ -355,7 +355,7 @@ export class Matrix3 extends Array<number> {
     }
 
     equals(that: ReadonlyMatrix3): boolean {
-        for (let i = 0; i < 9; ++i) {
+        for (let i = 0; i < this.length; ++i) {
             if (Math.abs(this[i] - that[i]) <= EPSILON * Math.max(1.0, Math.abs(this[i]), Math.abs(that[i]))) {
                 continue;
             }

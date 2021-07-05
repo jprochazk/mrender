@@ -1,4 +1,6 @@
 
+// TODO: every `static` method should also have a variant that works on an buffer + offset
+
 export const EPSILON = 0.000001;
 export const RAD = Math.PI / 180;
 export function rad(angle: number) { return angle * RAD }
@@ -30,3 +32,5 @@ export function ceil2(n: number) {
 }
 
 export type Randomizer = () => number;
+
+export type BufferLike = { [index: number]: number };

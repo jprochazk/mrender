@@ -1,5 +1,5 @@
-import { EPSILON, fhypot } from "./common";
-import { Quaternion } from "./quaternion";
+import { BufferLike, EPSILON, fhypot } from "./common";
+import { Quaternion, ReadonlyQuaternion } from "./quaternion";
 import { ReadonlyVector3 } from "./vector3";
 
 export interface ReadonlyMatrix4 extends Array<number> {
@@ -508,6 +508,43 @@ export class Matrix4 extends Array<number> {
     }
 
     /**
+     * Same as `Matrix4.orthographic`, but works on buffers instead of individual matrices.
+     */
+    static orthographicB(
+        buffer: BufferLike,
+        offset: number,
+        left: number,
+        right: number,
+        bottom: number,
+        top: number,
+        near: number,
+        far: number
+    ) {
+        const lr = 1 / (left - right);
+        const bt = 1 / (bottom - top);
+        const nf = 1 / (near - far);
+        const tx = (left + right) * lr;
+        const ty = (top + bottom) * bt;
+        const tz = (far + near) * nf;
+        buffer[offset + 0] = 2 * lr;
+        buffer[offset + 1] = 0;
+        buffer[offset + 2] = 0;
+        buffer[offset + 3] = 0;
+        buffer[offset + 4] = 0;
+        buffer[offset + 5] = -2 * bt;
+        buffer[offset + 6] = 0;
+        buffer[offset + 7] = 0;
+        buffer[offset + 8] = 0;
+        buffer[offset + 9] = 0;
+        buffer[offset + 10] = 2 * nf;
+        buffer[offset + 11] = 0;
+        buffer[offset + 12] = tx;
+        buffer[offset + 13] = ty;
+        buffer[offset + 14] = tz;
+        buffer[offset + 15] = 1;
+    }
+
+    /**
      * @param fov vertical field of view
      * @param aspect aspect ratio (viewport width/height)
      * @param near near plane
@@ -605,6 +642,93 @@ export class Matrix4 extends Array<number> {
         );
     }
 
+    /**
+     * Same as `Matrix4.lookAt`, but works on buffers instead of individual matrices.
+     */
+    static lookAtB(
+        buffer: BufferLike,
+        offset: number,
+        eye: ReadonlyVector3,
+        center: ReadonlyVector3,
+        up: ReadonlyVector3
+    ) {
+        const eyex = eye[0];
+        const eyey = eye[1];
+        const eyez = eye[2];
+        const upx = up[0];
+        const upy = up[1];
+        const upz = up[2];
+        const centerx = center[0];
+        const centery = center[1];
+        const centerz = center[2];
+        if (
+            Math.abs(eyex - centerx) < EPSILON &&
+            Math.abs(eyey - centery) < EPSILON &&
+            Math.abs(eyez - centerz) < EPSILON
+        ) {
+            return Matrix4.identity();
+        }
+        let x0, x1, x2, y0, y1, y2, z0, z1, z2, len;
+        z0 = eyex - centerx;
+        z1 = eyey - centery;
+        z2 = eyez - centerz;
+        len = 1 / fhypot(z0, z1, z2);
+        z0 *= len;
+        z1 *= len;
+        z2 *= len;
+        x0 = upy * z2 - upz * z1;
+        x1 = upz * z0 - upx * z2;
+        x2 = upx * z1 - upy * z0;
+        len = fhypot(x0, x1, x2);
+        if (len === 0) {
+            x0 = 0;
+            x1 = 0;
+            x2 = 0;
+        } else {
+            len = 1 / len;
+            x0 *= len;
+            x1 *= len;
+            x2 *= len;
+        }
+        y0 = z1 * x2 - z2 * x1;
+        y1 = z2 * x0 - z0 * x2;
+        y2 = z0 * x1 - z1 * x0;
+        len = fhypot(y0, y1, y2);
+        if (len === 0) {
+            y0 = 0;
+            y1 = 0;
+            y2 = 0;
+        } else {
+            len = 1 / len;
+            y0 *= len;
+            y1 *= len;
+            y2 *= len;
+        }
+
+        buffer[offset + 0] = x0;
+        buffer[offset + 1] = y0;
+        buffer[offset + 2] = z0;
+        buffer[offset + 3] = 0;
+        buffer[offset + 4] = x1;
+        buffer[offset + 5] = y1;
+        buffer[offset + 6] = z1;
+        buffer[offset + 7] = 0;
+        buffer[offset + 8] = x2;
+        buffer[offset + 9] = y2;
+        buffer[offset + 10] = z2;
+        buffer[offset + 11] = 0;
+        buffer[offset + 12] = -(x0 * eyex + x1 * eyey + x2 * eyez);
+        buffer[offset + 13] = -(y0 * eyex + y1 * eyey + y2 * eyez);
+        buffer[offset + 14] = -(z0 * eyex + z1 * eyey + z2 * eyez);
+        buffer[offset + 15] = 1;
+        return new Matrix4(
+            x0, y0, z0, 0,
+            x1, y1, z1, 0,
+            x2, y2, z2, 0,
+            -(x0 * eyex + x1 * eyey + x2 * eyez), -(y0 * eyex + y1 * eyey + y2 * eyez), -(z0 * eyex + z1 * eyey + z2 * eyez), 1
+        );
+    }
+
     static targetTo(eye: ReadonlyVector3, target: ReadonlyVector3, up: ReadonlyVector3): Matrix4 {
         const eyex = eye[0];
         const eyey = eye[1];
@@ -640,7 +764,7 @@ export class Matrix4 extends Array<number> {
         );
     }
 
-    static fromQuaternion(quat: Quaternion): Matrix4 {
+    static fromQuaternion(quat: ReadonlyQuaternion): Matrix4 {
         const x = quat[0];
         const y = quat[1];
         const z = quat[2];
@@ -718,7 +842,7 @@ export class Matrix4 extends Array<number> {
         );
     }
 
-    static translatedScaledRotated(pos: ReadonlyVector3, scale: ReadonlyVector3, rot: Quaternion): Matrix4 {
+    static translatedScaledRotated(pos: ReadonlyVector3, scale: ReadonlyVector3, rot: ReadonlyQuaternion): Matrix4 {
         const x = rot[0];
         const y = rot[1];
         const z = rot[2];
@@ -758,8 +882,59 @@ export class Matrix4 extends Array<number> {
         );
     }
 
+    /**
+     * Same as `Matrix4.translatedScaledRotated`, but works on buffers instead of individual matrices.
+     * 
+     * This treats the range `buffer[offset..offset + 16]` as a Matrix4.
+     * The range **must** be equal to an identity matrix, or to only have 
+     * been used with calls to this function.
+     */
+    static translatedScaledRotatedB(
+        buffer: BufferLike,
+        offset: number,
+        pos: ReadonlyVector3,
+        scale: ReadonlyVector3,
+        rot: ReadonlyQuaternion
+    ) {
+        const x = rot[0];
+        const y = rot[1];
+        const z = rot[2];
+        const w = rot[3];
+        const x2 = x + x;
+        const y2 = y + y;
+        const z2 = z + z;
+        const xx = x * x2;
+        const xy = x * y2;
+        const xz = x * z2;
+        const yy = y * y2;
+        const yz = y * z2;
+        const zz = z * z2;
+        const wx = w * x2;
+        const wy = w * y2;
+        const wz = w * z2;
+        const sx = scale[0];
+        const sy = scale[1];
+        const sz = scale[2];
+        buffer[offset + 0] = (1 - (yy + zz)) * sx;
+        buffer[offset + 1] = (xy + wz) * sx;
+        buffer[offset + 2] = (xz - wy) * sx;
+        buffer[offset + 3] = 0;
+        buffer[offset + 4] = (xy - wz) * sy;
+        buffer[offset + 5] = (1 - (xx + zz)) * sy;
+        buffer[offset + 6] = (yz + wx) * sy;
+        buffer[offset + 7] = 0;
+        buffer[offset + 8] = (xz + wy) * sz;
+        buffer[offset + 9] = (yz - wx) * sz;
+        buffer[offset + 10] = (1 - (xx + yy)) * sz;
+        buffer[offset + 11] = 0;
+        buffer[offset + 12] = pos[0];
+        buffer[offset + 13] = pos[1];
+        buffer[offset + 14] = pos[2];
+        buffer[offset + 15] = 1;
+    }
+
     equals(that: ReadonlyMatrix4): boolean {
-        for (let i = 0; i < 9; ++i) {
+        for (let i = 0; i < this.length; ++i) {
             if (Math.abs(this[i] - that[i]) <= EPSILON * Math.max(1.0, Math.abs(this[i]), Math.abs(that[i]))) {
                 continue;
             }

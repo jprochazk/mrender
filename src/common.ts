@@ -88,3 +88,16 @@ export function dedent(strings: TemplateStringsArray, ...exprs: TemplateValue[])
 
     return lines.join("\n");
 }
+
+export function tjoin(strings: TemplateStringsArray, ...exprs: TemplateValue[]): string {
+    const out = Array(strings.length + exprs.length);
+    let strCursor = 0;
+    let exprCursor = 0;
+    let putString = true;
+    for (let i = 0; i < out.length; ++i) {
+        if (putString) out[i] = strings[strCursor++];
+        else out[i] = exprs[exprCursor++].toString();
+        putString = !putString;
+    }
+    return out.join("");
+}
