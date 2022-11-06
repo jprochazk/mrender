@@ -1,3 +1,2 @@
-
 export * from "./math";
-export * as GL from "./gl";
+export * from "./gl";
